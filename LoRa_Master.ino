@@ -1,26 +1,22 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-// #define ssid "methawut150444"
-// #define password "por150444"
-#define ssid "PlanetCentric"
-#define password "BearLab!"
+//Input your ssid and password Wi-Fi network
+//#define ssid "PlanetCentric"
+//#define password "BearLab!"
 
 #include <LoRa.h>
 
-#include <PCF8574.h>
-PCF8574 PCF(0x20);
-
-// For connect LoRa module
-#define ss D0    //D0
-#define rst D1   //D1
-#define dio0 D2  //D2
+// custom pin to connect LoRa module
+//#define ss D0    //D0
+//#define rst D1   //D1
+//#define dio0 D2  //D2
 
 // Define Node Address
 byte masterNode = 0xFF;     
 byte slaveNode1 = 0xBB;
-byte slaveNode2 = 0xCC; 
-byte slaveNode3 = 0xEE;
+//byte slaveNode2 = 0xCC; //if you have a LoRa slave more than 1 module
+//byte slaveNode3 = 0xEE; //if you have a LoRa slave more than 1 module
 
 // Time Interval
 unsigned long last_ms = 0;
@@ -37,13 +33,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Role: Master");
 
-  PCF8574_setup();
   LoRa_setup();
-  WiFi_setup();
-
-  //if init succeeded!
-  // PCF.digitalWrite(P4, LOW);
-  // PCF.digitalWrite(P5, LOW);
+  WiFi_setup(); //if you want not to connect Wi-Fi please comment this function.
 }
 
 //------------------------------------------------< Loop >
@@ -56,7 +47,7 @@ void loop() {
       Secs = 0; 
     }
     //------------------< start request data from node> 
-
+    //define your time interval each slaves
     if(Secs == 0){
       String message = "req -> node1"; 
       sendMessage(message, masterNode, slaveNode1);
@@ -66,11 +57,12 @@ void loop() {
       String message = "req -> node2"; 
       sendMessage(message, masterNode, slaveNode2);
     }
-    if(Secs == 8){
+    //if you have a LoRa slave more than 1 module
+    // if(Secs == 8){
      
-      String message = "req -> node3"; 
-      sendMessage(message, masterNode, slaveNode3);
-    }
+    //   String message = "req -> node3"; 
+    //   sendMessage(message, masterNode, slaveNode3);
+    // }
 
     //------------------< end > 
     last_s = current_s;
@@ -82,6 +74,9 @@ void loop() {
 //================================================< Custom function >
 //------------------------------------------------< Master send request to other slave node >
 void sendMessage(String outgoing, byte MasterNode, byte otherNode) {
+
+  // you can reduce or add function LoRa.write(); that sending data function  
+  
   LoRa.beginPacket();                 // start packet
   LoRa.write(otherNode);              // 1. add destination address
   LoRa.write(MasterNode);             // 2. add sender address
@@ -126,11 +121,14 @@ void onReceive(int packetSize){
       return;
     }
 
-    // Serial.println(SenderNode + " " + incoming + " | RSSI: " + String(LoRa.packetRssi()));
-    incoming += "\"RSSI\" : \""  + String(LoRa.packetRssi()) +   "\" ";
-    incoming += "}";
-    // Serial.println(incoming);
-    recordMessage(incoming);
+    
+    Serial.println(SenderNode + " " + incoming + " | RSSI: " + String(LoRa.packetRssi()));
+
+    
+    //incoming += "\"RSSI\" : \""  + String(LoRa.packetRssi()) +   "\" ";
+    //incoming += "}";
+    
+    recordMessage(incoming); //if you want not to connect API please comment this function.
   }
 }
 
@@ -192,7 +190,6 @@ void LoRa_setup(){
   LoRa.setSyncWord(0x31);
 
   Serial.println("LoRa init succeeded!");
-  PCF.digitalWrite(P4, LOW);
 }
 
 //------------------------------------------------< WiFi setup >
@@ -205,21 +202,4 @@ void WiFi_setup(){
     Serial.print(".");
   }
   Serial.println("WiFi Connected");
-  PCF.digitalWrite(P5, LOW);
-}
-
-//------------------------------------------------< PCF8574 setup >
-void PCF8574_setup(){
-  //Active LOW (Pull down)
-
-  // PCF.pinMode(P0, OUTPUT);
-  // PCF.pinMode(P1, OUTPUT);
-  // PCF.pinMode(P2, OUTPUT);
-  // PCF.pinMode(P3, OUTPUT);
-  PCF.pinMode(P4, OUTPUT);
-  PCF.pinMode(P5, OUTPUT);
-  // PCF.pinMode(P6, OUTPUT);
-  // PCF.pinMode(P7, OUTPUT);
-
-  PCF.begin();
 }
